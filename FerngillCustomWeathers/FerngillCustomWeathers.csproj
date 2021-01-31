@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>FerngillCustomWeathers</AssemblyName>
+    <RootNamespace>FerngillCustomWeathers</RootNamespace>
+    <Version>0.0.1-alpha.3</Version>
+    <TargetFramework>net452</TargetFramework>
+    <EnableHarmony>false</EnableHarmony>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MersenneTwister" Version="1.0.6" />
+    <PackageReference Include="Pathoschild.Stardew.ModBuildConfig" Version="3.2.2" />
+	<PackageReference Include="Pathoschild.Stardew.ModTranslationClassBuilder" Version="1.0.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="assets\LighterFog.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="assets\ThickerFog.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="assets\ThickerFog2.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  
+  <Import Project="$(SolutionDir)\deploy-mod.targets" />
+
+</Project>
