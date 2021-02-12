@@ -164,6 +164,8 @@ namespace FerngillDynamicRainAndWind
                     Console.WriteLine("Weather updated to stormy");
                     break;
             }
+
+            Game1.updateWeatherIcon();
         }
 
         private void OnEndDay(object sender, StardewModdingAPI.Events.DayEndingEventArgs e)

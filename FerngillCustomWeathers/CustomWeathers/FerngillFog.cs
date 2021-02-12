@@ -25,7 +25,7 @@ namespace FerngillCustomWeathers.CustomWeathers
         public int ExpirationTime { get; private set; }
         public int BeginTime { get; private set; }
         public bool HideInCurrentLocation { get; set; }
-        public bool IsWeatherVisible => (Game1.timeOfDay >= BeginTime && Game1.timeOfDay <= ExpirationTime);
+        public bool IsWeatherVisible => (!Game1.isFestival() && CurrentFogType != FogType.None);
         private bool FadeOutFog { get; set; }
         private bool FadeInFog { get; set; }
         private bool FogStarted { get; set; }
@@ -55,11 +55,15 @@ namespace FerngillCustomWeathers.CustomWeathers
                 this.FogTargetAlpha = .7f;
             }
 
-            if (CurrentFogType == FogType.Light)
-                this.FogTargetAlpha = .6f; //.4f is barely visible
-
-            if (CurrentFogType == FogType.Blinding)
-                this.FogTargetAlpha = .95f; 
+            switch (CurrentFogType)
+            {
+                case FogType.Light:
+                    this.FogTargetAlpha = .6f; //.4f is barely visible
+                    break;
+                case FogType.Blinding:
+                    this.FogTargetAlpha = .95f;
+                    break;
+            }
         }
 
         /// <summary> This function resets the fog for a new day. </summary>
@@ -107,6 +111,7 @@ namespace FerngillCustomWeathers.CustomWeathers
         /// <summary>This function creates the fog </summary>
         public void CreateWeather(FogType fType, bool force)
         {
+            FogElapsed.Reset();
             CurrentFogType = FogType.Normal;
 
             if (Game1.random.NextDouble() < .25)
@@ -123,16 +128,16 @@ namespace FerngillCustomWeathers.CustomWeathers
             switch (CurrentFogType)
             {
                 case FogType.Normal:
-                    FogTexture = TextureData.FogTexture;
-                    break;
-                case FogType.Light:
                     FogTexture = TextureData.LightFogTexture;
                     break;
+                case FogType.Light:
+                    FogTexture = TextureData.ThickFogTexture;
+                    break;
                 case FogType.Blinding:
-                    FogTexture = TextureData.BlindingFogTexture;
+                    FogTexture = TextureData.ThickestFogTexture;
                     break;
                 default:
-                    FogTexture = TextureData.FogTexture;
+                    FogTexture = TextureData.LightFogTexture;
                     break;
             }
 
@@ -147,13 +152,13 @@ namespace FerngillCustomWeathers.CustomWeathers
                 CurrentFogType = FogType.None;
                 FadeOutFog = true;
                 SetFogTargetAlpha();
-                FogElapsed.Start();
+                FogElapsed.Stop();
             }
         }
 
         public void SetWeatherTime(int begin, int end)
         {
-            FerngillCustomWeathers.Logger.Log($"Firing weather set time for {begin} and {end}", LogLevel.Info);
+            FerngillCustomWeathers.Logger.Log($"Firing weather set time for fog at {begin} and {end}", LogLevel.Info);
 
             BeginTime = begin;
             ExpirationTime = end;
@@ -168,11 +173,11 @@ namespace FerngillCustomWeathers.CustomWeathers
         {
             Console.WriteLine($"Fog Alpha at this tick is {FogAlpha} with target set to {FogTargetAlpha}");
 
-            if (Game1.timeOfDay >= BeginTime && Game1.timeOfDay < ExpirationTime && !FogStarted)
+            if (Game1.timeOfDay >= BeginTime && Game1.timeOfDay < ExpirationTime && !FogStarted && !IsWeatherVisible)
             {
-                FogElapsed.Reset();
-                CurrentFogType = FogType.Normal;
+                //FogElapsed.Reset();
                 SetFogTargetAlpha();
+                CurrentFogType = FogType.Normal;
                 FogElapsed.Start();
                 FadeInFog = true;
                 FogStarted = true;
@@ -180,7 +185,7 @@ namespace FerngillCustomWeathers.CustomWeathers
 
             if (Game1.timeOfDay >= ExpirationTime && IsWeatherVisible)
             {
-                FogElapsed.Reset();
+                //FogElapsed.Reset();
                 SetFogTargetAlpha();
                 FadeOutFog = true;
                 FogElapsed.Start();
@@ -217,7 +222,7 @@ namespace FerngillCustomWeathers.CustomWeathers
                             v.X = (int) x;
                             v.Y = (int) y;
                             Game1.spriteBatch.Draw(FogTexture, v, FogSource,
-                                _fogColor * FogAlpha, 0f,
+                                FogAlpha > 0.0 ? _fogColor * FogAlpha : Color.Black, 0f,
                                 Vector2.Zero, 1.001f, SpriteEffects.None, 1f);
                         }
                     }
@@ -234,7 +239,7 @@ namespace FerngillCustomWeathers.CustomWeathers
                 // So, 3000ms for 55% or 54.45 repeating. But this is super fast....
                 // let's try 955ms.. or 1345..
                 // or 2690.. so no longer 3s. 
-                FogAlpha = FogTargetAlpha - (FogTargetAlpha * (FogElapsed.ElapsedMilliseconds / fogFadeTime));
+                FogAlpha = FogTargetAlpha * (FogElapsed.ElapsedMilliseconds / fogFadeTime);
                 //Console.WriteLine($"Fade out code: {FogAlpha:N3}, for elapsed time {FogElapsed.ElapsedMilliseconds}");
                 if (FogAlpha <= 0)
                 {
@@ -252,7 +257,6 @@ namespace FerngillCustomWeathers.CustomWeathers
                 //as above, but the reverse.
                 FogAlpha = FogTargetAlpha * (FogElapsed.ElapsedMilliseconds / fogFadeTime);
 
-                //Console.WriteLine($"Fade in code: {FogAlpha:N3}, for elapsed time {FogElapsed.ElapsedMilliseconds}");
                 if (FogAlpha >= FogTargetAlpha)
                 {
                     FogAlpha = FogTargetAlpha;

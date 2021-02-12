@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewValley;
@@ -23,6 +24,7 @@ namespace FerngillCustomWeathers
 
         internal FerngillBlizzard()
         {
+            HideInCurrentLocation = false;
         }
 
         public void OnNewDay()
@@ -33,6 +35,7 @@ namespace FerngillCustomWeathers
         /// <summary> This function resets the fog. </summary>
         public void Reset()
         {
+            HideInCurrentLocation = false;
             IsWhiteOut = false;
             IsBloodMoon = false;
             BeginTime = 600;
@@ -43,13 +46,25 @@ namespace FerngillCustomWeathers
         {
             IsWhiteOut = whiteout;
         }
+        
+        public void UpdateWeather()
+        {
+            snowPosA = Game1.updateFloatingObjectPositionForMovement(current: new Vector2(Game1.viewport.X, Game1.viewport.Y), w: snowPosA, previous: Game1.previousViewportPosition, speed: -1f);
+            snowPosB = Game1.updateFloatingObjectPositionForMovement(current: new Vector2(Game1.viewport.X, Game1.viewport.Y), w: snowPosB, previous: Game1.previousViewportPosition, speed: -1f);
+            snowPosC = Game1.updateFloatingObjectPositionForMovement(current: new Vector2(Game1.viewport.X, Game1.viewport.Y), w: snowPosC, previous: Game1.previousViewportPosition, speed: -1f);
+        }
 
         public void SetWeatherTime(int begin, int end)
         {
-            FerngillCustomWeathers.Logger.Log($"Firing weather set time for {begin} and {end}", LogLevel.Info);
+            FerngillCustomWeathers.Logger.Log($"Firing weather set time for blizzard at for {begin} and {end}", LogLevel.Info);
 
             BeginTime = begin;
             ExpirationTime = end;
+        }
+
+        public void EndWeather()
+        {
+            ExpirationTime = Game1.timeOfDay - 10;
         }
 
         public void DrawWeather()
@@ -59,14 +74,14 @@ namespace FerngillCustomWeathers
 
             Color snowColor = (IsBloodMoon ? Color.Red : Color.White) * .8f * Game1.options.snowTransparency;
 
-            if (Game1.IsSnowingHere() && (bool)Game1.currentLocation.IsOutdoors && !(Game1.currentLocation is Desert))
+            if (Game1.IsSnowingHere() && Game1.currentLocation.IsOutdoors && !(Game1.currentLocation is Desert))
             {
+                Console.WriteLine("Drawing the blizzard!!!!");
                 snowPosA.X %= 64f;
                 Vector2 v = default(Vector2);
-
-                for (float x = -64f + snowPosA.X % 64f; x < (float)Game1.viewport.Width; x += 64f)
+                for (float x = -64f + snowPosA.X % 64f; x < Game1.viewport.Width; x += 64f)
                 {
-                    for (float y = -64f + snowPosA.Y % 64f; y < (float)Game1.viewport.Height; y += 64f)
+                    for (float y = -64f + snowPosA.Y % 64f; y < Game1.viewport.Height; y += 64f)
                     {
                         v.X = (int)x;
                         v.Y = (int)y;
@@ -75,15 +90,15 @@ namespace FerngillCustomWeathers
                 }
             }
 
-            if (Game1.IsSnowingHere() && (bool) Game1.currentLocation.IsOutdoors &&
+            if (Game1.IsSnowingHere() && Game1.currentLocation.IsOutdoors &&
                 !(Game1.currentLocation is Desert) && IsWhiteOut)
             {
+                Console.WriteLine("Drawing the whiteout");
                 snowPosB.X %= 64f;
                 Vector2 v2 = default(Vector2);
-
-                for (float x = -64f + snowPosB.X % 64f; x < (float)Game1.viewport.Width; x += 64f)
+                for (float x = -64f + snowPosB.X % 64f; x < Game1.viewport.Width; x += 64f)
                 {
-                    for (float y = -64f + snowPosB.Y % 64f; y < (float)Game1.viewport.Height; y += 64f)
+                    for (float y = -64f + snowPosB.Y % 64f; y < Game1.viewport.Height; y += 64f)
                     {
                         v2.X = (int)x;
                         v2.Y = (int)y;
@@ -97,16 +112,15 @@ namespace FerngillCustomWeathers
 
                 snowPosC.X %= 64f;
                 Vector2 v3 = default(Vector2);
-
-                for (float x = -64f + snowPosC.X % 64f; x < (float)Game1.viewport.Width; x += 64f)
+                for (float x = -64f + snowPosC.X % 64f; x < Game1.viewport.Width; x += 64f)
                 {
-                    for (float y = -64f + snowPosC.Y % 64f; y < (float)Game1.viewport.Height; y += 64f)
+                    for (float y = -64f + snowPosC.Y % 64f; y < Game1.viewport.Height; y += 64f)
                     {
-                        v2.X = (int)x;
-                        v2.Y = (int)y;
+                        v3.X = (int)x;
+                        v3.Y = (int)y;
                         Game1.spriteBatch.Draw(Game1.mouseCursors,v3, new Microsoft.Xna.Framework.Rectangle?
                             (new Microsoft.Xna.Framework.Rectangle
-                                (368 + (int)((Game1.currentGameTime.TotalGameTime.TotalMilliseconds + 125) % 1200.0) / 75 * 16, 192, 16, 16)),
+                                (368 + (int)((Game1.currentGameTime.TotalGameTime.TotalMilliseconds + 707) % 1200.0) / 75 * 16, 192, 16, 16)),
                             snowColor, 0.0f, Vector2.Zero,
                             Game1.pixelZoom + 1f / 1000f, SpriteEffects.None, 1f);
                     }

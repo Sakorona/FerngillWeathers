@@ -1,4 +1,6 @@
-﻿using FerngillCustomWeathers.CustomWeathers;
+﻿using System;
+using System.Security.Policy;
+using FerngillCustomWeathers.CustomWeathers;
 using MersenneTwister;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
@@ -35,8 +37,51 @@ namespace FerngillCustomWeathers
             Helper.Events.Display.RenderedWorld += Display_RenderedWorld;
 
             Helper.ConsoleCommands.Add("debug_fogoutput", "Show Fog Output", DisplayFogInfo);
+            Helper.ConsoleCommands.Add("debug_forcefog", "Foooog!", ForceFog);
+            Helper.ConsoleCommands.Add("debug_forceblizz", "Blizzard!", ForceBlizz);
+            Helper.ConsoleCommands.Add("debug_endblizz", "End Blizzard", EndBlizz);
+
 
             Helper.Events.Multiplayer.ModMessageReceived += MessageReceived;
+        }
+
+        private void EndBlizz(string arg1, string[] arg2)
+        {
+            OurBlizzard.EndWeather();
+        }
+
+        private void ForceBlizz(string arg1, string[] arg2)
+        {
+            Game1.netWorldState.Value.GetWeatherForLocation(GameLocation.LocationContext.Default).isSnowing
+                .Value = true;
+            Game1.netWorldState.Value.GetWeatherForLocation(GameLocation.LocationContext.Default).isRaining
+                .Value = false;
+            Game1.netWorldState.Value.GetWeatherForLocation(GameLocation.LocationContext.Default).isDebrisWeather
+                .Value = false;
+            Game1.netWorldState.Value.GetWeatherForLocation(GameLocation.LocationContext.Default).isLightning
+                .Value = false;
+
+            Game1.isRaining = false;
+            Game1.isDebrisWeather = false;
+            Game1.isLightning = false;
+            Game1.isSnowing = true;
+
+            Game1.updateWeather(Game1.currentGameTime);
+            Game1.currentLocation.UpdateWhenCurrentLocation(Game1.currentGameTime);
+            Game1.updateWeatherIcon();
+            OurBlizzard.SetWeatherTime(600,2700);
+            OurBlizzard.SetWhiteOut(true);
+
+            Monitor.Log($"Forcing blizzards. Snow spawned, and white out set to true.");
+        }
+
+        private void ForceFog(string arg1, string[] arg2)
+        {
+            OurFog.CreateWeather(FogType.Normal, true);
+            if (Game1.timeOfDay < 1200)
+                OurFog.SetWeatherTime(600,1200);
+            else
+                OurFog.SetWeatherTime(1200,2400);
         }
 
         private void DisplayFogInfo(string arg1, string[] arg2)
@@ -91,6 +136,9 @@ namespace FerngillCustomWeathers
 
         private void MessageReceived(object sender, ModMessageReceivedEventArgs e)
         {
+            if (Game1.IsMasterGame)
+                return;
+
             if (e.Type == "FogSync")
             {
                 var message = e.ReadAs<FogMessage>();
@@ -146,12 +194,20 @@ namespace FerngillCustomWeathers
 
         private void CheckAndInitBlizzards()
         {
-            int bTime = 600, eTime = 600;
+            double blizzChance = .01;
             bool whiteOut = false;
 
+            int bTime = 600, eTime = 600;
 
+            if (Randoms.NextDouble() < blizzChance && Game1.IsSnowingHere())
+                eTime = 2600;
 
             OurBlizzard.SetWeatherTime(bTime, eTime);
+
+            //5% conversion chance
+            if (Randoms.NextDouble() < .05)
+                whiteOut = true;
+
             OurBlizzard.SetWhiteOut(whiteOut);
             SendBlizzardMessage(whiteOut, bTime, eTime);
         }
@@ -184,8 +240,7 @@ namespace FerngillCustomWeathers
                     break;
             }
 
-            //fogChance = 1;
-
+            fogChance = 1.0;//test value
             if (!(Randoms.NextDouble() <= fogChance)) return;
             OurFog.CreateWeather(FogType.Normal, false);
 
@@ -225,6 +280,7 @@ namespace FerngillCustomWeathers
         private void PerTickUpdate(object sender, UpdateTickedEventArgs e)
         {
             OurFog.MoveWeather();
+            OurBlizzard.UpdateWeather();
         }
 
         public void SendFogMessage(FogType f, int sTime, int eTime)
