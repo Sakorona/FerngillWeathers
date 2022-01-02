@@ -1,6 +1,6 @@
 ﻿using System;
+using HarmonyLib;
 using FerngillDynamicRainAndWind.Patches;
-using Harmony;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -27,7 +27,8 @@ namespace FerngillDynamicRainAndWind
             Reflection = Helper.Reflection;
             TimeElapsed = 0;
 
-            var harmony = HarmonyInstance.Create("koihimenakamura.dynamicrainandwind");
+            var harmony = new Harmony(this.ModManifest.UniqueID);
+
             harmony.Patch(
                 AccessTools.Method(typeof(GameLocation), "drawAboveAlwaysFrontLayer"),
                 transpiler: new HarmonyMethod(AccessTools.Method(typeof(GameLocationPatches), "DAAFLTranspiler")));

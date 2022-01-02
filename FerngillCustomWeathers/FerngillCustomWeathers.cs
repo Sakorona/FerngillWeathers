@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Security.Policy;
 using FerngillCustomWeathers.CustomWeathers;
-using MersenneTwister;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -14,7 +13,7 @@ namespace FerngillCustomWeathers
         internal static IMonitor Logger;
         internal WeatherConfig ModOptions;
         internal Icons OurTextures;
-
+        internal Random Randoms;
         internal FerngillFog OurFog;
         internal FerngillBlizzard OurBlizzard;
         internal bool FogToday;
@@ -24,6 +23,7 @@ namespace FerngillCustomWeathers
             ModOptions = Helper.ReadConfig<WeatherConfig>();
             OurTextures = new Icons(helper.Content);
             Logger = Monitor;
+            Randoms = new Xoshiro.PRNG32.XoShiRo128starstar();
             FogToday = false;
             OurFog = new FerngillFog(ModOptions, OurTextures);
             OurBlizzard = new FerngillBlizzard();
